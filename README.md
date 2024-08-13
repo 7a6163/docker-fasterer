@@ -2,7 +2,7 @@
 
 [![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/7a6163/fasterer)](https://hub.docker.com/r/7a6163/fasterer)
 
-docker image for [fasterer]https://github.com/rubysec/fasterer
+docker image for [fasterer](https://github.com/DamirSvrtan/fasterer)
 
 
 ## DONATE
