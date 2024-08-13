@@ -2,6 +2,8 @@ name: Build and Push Docker Image
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*.*.*'
 
@@ -32,19 +34,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine Docker tags
+        id: docker_tags
+        run: |
+          if [[ $GITHUB_REF == refs/heads/main ]]; then
+            echo "tags=ghcr.io/${{ github.repository_owner }}/fasterer:latest" >> $GITHUB_OUTPUT
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "tags=ghcr.io/${{ github.repository_owner }}/fasterer:latest,ghcr.io/${{ github.repository_owner }}/fasterer:${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push Docker image to GHCR
         uses: docker/build-push-action@v4
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/fasterer:latest
-            ghcr.io/${{ github.repository_owner }}/fasterer:${{ github.ref_name }}
+          tags: ${{ steps.docker_tags.outputs.tags }}
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Checkout code
@@ -72,7 +82,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image to Docker Hub
-        if: startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -81,3 +90,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/fasterer:${{ github.ref_name }}
             ${{ secrets.DOCKERHUB_USERNAME }}/fasterer:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fasterer:latest
